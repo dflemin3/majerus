@@ -25,7 +25,7 @@ __all__ = ["scrape_team_game_logs_basic", "scrape_team_game_logs_adv",
 
 
 def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
-                                normalizeNames : bool=True) -> pd.DataFrame:
+                                normalize_names : bool=True) -> pd.DataFrame:
     """
     Scrape all basic gamelogs for the (season-1 - season) season, e.g.
     2014-2015 season, from https://www.sports-reference.com/cbb/ for team. URL
@@ -57,7 +57,7 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
         raise IOError("ERROR: Haven't validated scraping for seasons < 2010-2011!")
 
     # Parse team name
-    parsed_team = parser.name_normalizer(team, ignoreErrors=False)
+    parsed_team = parser.name_normalizer(team, ignore_errors=False)
 
     if verbose:
         print(f"Scraping all basic gamelogs for {parsed_team} for the {season-1}-{season} season.")
@@ -66,12 +66,12 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
     url = f"http://www.sports-reference.com/cbb/schools/{parsed_team}/{season}-gamelogs.html"
 
     # Scrape the data using pandas
-    df = pd.read_html(url, parse_dates=True, attrs = {'id': 'sgl-basic'},
-                      header=1, index_col=1)[0]
+    df = pd.read_html(url, parse_dates=True, attrs = {'id': 'sgl-basic_NCAAM'},
+                    header=1, index_col=1)[0]
 
     # Remove NaN and junk indices that correspond to delimiter rows
-    df = df[df.index.notnull()]
-    df = df[df.index != "Date"]
+    df = df[df.index.notnull()].copy()
+    df = df[df.index != "Date"].copy()
 
     # Explicitely make date index a datetime
     df.index = pd.to_datetime(df.index, format="%Y-%m-%d")
@@ -82,23 +82,23 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
     df.drop(columns=["Unnamed: 2"], inplace=True)
 
     # Parse location to be H, A, or N for home, away, or neutral
-    df["location"].fillna("H", inplace=True)
+    df["location"] = df["location"].fillna("H")
     df["location"] = df["location"].apply(lambda x : "A" if x == "@" else x)
 
     # Set team, opponent names and drop NaNs (aka non-D1 teams)
     if normalize_names:
         df["team"] = pd.Series([parsed_team for _ in range(len(df))], index=df.index)
-        df["opp"] = df["opp"].apply(parser.name_normalizer, **{"ignore_errors" : True})
+        df["Opp"] = df["Opp"].apply(parser.name_normalizer, **{"ignore_errors" : True})
     else:
         df["team"] = pd.Series([team for _ in range(len(df))], index=df.index)
-    df.dropna(subset=["opp"], axis=0, inplace=True)
+    df.dropna(subset=["Opp"], axis=0, inplace=True)
 
     # Change W/L column to be 0/1 indicator variable for if Team won
     df["team_won"] = df["W/L"].copy()
     df.drop(columns=["W/L"], axis=0, inplace=True)
 
     # Correct data type of the data frame
-    dtypes = {'opp' : str, 'team_won' : str, 'Tm' : np.float64, 'Opp.1' : np.float64, 'FG' : np.float64,
+    dtypes = {'Opp' : str, 'team_won' : str, 'Tm' : np.float64, 'Opp.1' : np.float64, 'FG' : np.float64,
             'FGA' : np.float64, 'FG%' : np.float64, '3P' : np.float64, '3PA' : np.float64,
             '3P%' : np.float64, 'FT' : np.float64, 'FTA' : np.float64, 'FT%' : np.float64, 'ORB' : np.float64,
             'TRB' : np.float64, 'AST' : np.float64, 'STL' : np.float64, 'BLK' : np.float64, 'TOV' : np.float64,
@@ -113,7 +113,7 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
     df["team_won"] = df["team_won"].apply(lambda x : 1 if x == "W" else 0)
 
     # Map column names for opponent to be more intuitive
-    col_map_dict = {'opp' : "opponent", 'Tm' : "team_points",
+    col_map_dict = {'Opp' : "opponent", 'Tm' : "team_points",
                     'Opp.1' : "opponent_points", 'FG.1' : "opp_fg", 'FGA.1' : "opp_fga",
                     'FG%.1' : "opp_fg%", '3P.1' : "opp_3p", '3PA.1' : "opp_3pa",
                     '3P%.1' : "opp_3p%", 'FT.1' : "opp_ft", 'FTA.1' : "opp_fta",
@@ -158,21 +158,21 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
         raise IOError("ERROR: Haven't validated scraping for seasons < 2010-2011!")
 
     # Parse team name
-    parsed_team = parser.name_normalizer(team, ignoreErrors=False)
+    parsed_team = parser.name_normalizer(team, ignore_errors=False)
 
     if verbose:
-        print(f"Scraping all advanced gamelogs for {parsed_team} for the {season-1}-%d {season}.")
+        print(f"Scraping all advanced gamelogs for {parsed_team} for the {season-1}-{season}.")
 
     # Initialize gamelog
     url = f"http://www.sports-reference.com/cbb/schools/{parsed_team}/{season}-gamelogs-advanced.html"
 
     # Scrape the data using pandas
     df = pd.read_html(url, parse_dates=True, attrs = {'id': 'sgl-advanced'},
-                      header=1, index_col=1)[0]
+                    header=1, index_col=1)[0]
 
     # Remove NaN and junk indices that correspond to delimiter rows
-    df = df[df.index.notnull()]
-    df = df[df.index != "Date"]
+    df = df[df.index.notnull()].copy()
+    df = df[df.index != "Date"].copy()
 
     # Explicitely make date index a datetime
     df.index = pd.to_datetime(df.index, format="%Y-%m-%d")
@@ -183,35 +183,35 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
     df.drop(columns=["Unnamed: 2"], inplace=True)
 
     # Parse location to be H, A, or N for home, away, or neutral
-    df["location"].fillna("H", inplace=True)
+    df["location"] = df["location"].fillna("H")
     df["location"] = df["location"].apply(lambda x : "A" if x == "@" else x)
 
     # Set team, opponent names and drop NaNs (aka non-D1 teams)
-    if normalizeNames:
+    if normalize_names:
         df["team"] = pd.Series([parsed_team for _ in range(len(df))], index=df.index)
-        df["opp"] = df["opp"].apply(parser.name_normalizer, **{"ignore_errors" : True})
+        df["Opp"] = df["Opp"].apply(parser.name_normalizer, **{"ignore_errors" : True})
     else:
         df["team"] = pd.Series([team for _ in range(len(df))], index=df.index)
-    df.dropna(subset=["opp"], axis=0, inplace=True)
+    df.dropna(subset=["Opp"], axis=0, inplace=True)
 
     # Change W/L column to be 0/1 indicator variable for if Team won
     df["team_won"] = df["W/L"].copy()
     df.drop(columns=["W/L"], axis=0, inplace=True)
 
     # Correct data type of the data frame
-    dtypes = {'opp' : str, 'Tm' : np.float64, 'Opp.1' : np.float64, 'ORtg' : np.float64,
-              'DRtg' : np.float64, 'Pace' : np.float64, 'FTr' : np.float64, '3PAr' : np.float64,
-              'TS%' : np.float64, 'TRB%' : np.float64, 'AST%' : np.float64, 'STL%' : np.float64, 'BLK%' : np.float64,
-              'eFG%' : np.float64, 'TOV%' : np.float64, 'ORB%' : np.float64, 'FT/FGA' : np.float64, 'eFG%.1' : np.float64,
-              'TOV%.1' : np.float64, 'DRB%' : np.float64, 'FT/FGA.1' : np.float64, "location" : str, "team" : str,
-              'team_won' : str}
+    dtypes = {'Opp' : str, 'Tm' : np.float64, 'Opp.1' : np.float64, 'ORtg' : np.float64,
+            'DRtg' : np.float64, 'Pace' : np.float64, 'FTr' : np.float64, '3PAr' : np.float64,
+            'TS%' : np.float64, 'TRB%' : np.float64, 'AST%' : np.float64, 'STL%' : np.float64, 'BLK%' : np.float64,
+            'eFG%' : np.float64, 'TOV%' : np.float64, 'ORB%' : np.float64, 'FT/FGA' : np.float64, 'eFG%.1' : np.float64,
+            'TOV%.1' : np.float64, 'DRB%' : np.float64, 'FT/FGA.1' : np.float64, "location" : str, "team" : str,
+            'team_won' : str}
     df = df.astype(dtypes)
 
     # Disregard OT results, only whether Team won or lost. Convert W/L to bool
     df["team_won"] = df["team_won"].apply(lambda x : str(x).split()[0])
     df["team_won"] = df["team_won"].apply(lambda x : 1 if x == "W" else 0)
 
-    col_map_dict = {'opp' : "opponent", 'Tm' : "team_points",
+    col_map_dict = {'Opp' : "opponent", 'Tm' : "team_points",
                     'Opp.1' : "opponent_points", 'eFG%.1' : "opponent_efg%",
                     'TOV%.1' : "opponent_tov%", 'FT/FGA.1' : "opponent_ft_per_fga"}
     df.rename(columns=col_map_dict, inplace=True)

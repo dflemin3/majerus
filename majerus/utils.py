@@ -113,7 +113,7 @@ start_tourney_20212022 = datetime(2022, 3, 15)
 end_tourney_20212022 = datetime(2022, 4, 4)
 
 # 2022-2023
-start_reg_20222024 = datetime(2021, 11, 7)
+start_reg_20222023 = datetime(2021, 11, 7)
 end_reg_20222023 = datetime(2022, 3, 12)
 start_tourney_20222023 = datetime(2022, 3, 14)
 end_tourney_20222023 = datetime(2022, 4, 3)
