@@ -187,9 +187,19 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
     # Initialize gamelog
     url = f"http://www.sports-reference.com/cbb/schools/{parsed_team}/{season}-gamelogs-advanced.html"
 
-    # Scrape the data using pandas
-    df = pd.read_html(url, parse_dates=True, attrs = {'id': 'sgl-advanced'},
-                    header=1, index_col=1)[0]
+    # Scrape using requests
+    try: 
+        r = requests.get(url, proxies=proxies, headers=headers)
+        if r.status_code < 400:
+            # Parse response data using pandas after successful request
+            df = pd.read_html(r.content, parse_dates=True, attrs={'id': 'sgl-advanced'},
+                              header=1, index_col=1)[0]
+        else: 
+            print(f"Failed request with status code {r.status_code}") 
+            return None
+    except Exception as e: 
+        print(f"Failed request with exception {e}")
+        return None 
 
     # Remove NaN and junk indices that correspond to delimiter rows
     df = df[df.index.notnull()].copy()
