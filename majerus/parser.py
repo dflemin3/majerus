@@ -566,9 +566,9 @@ def name_normalizer(name : str, made_tourney : bool=False,
         CBB team name, like Duke
     made_tourney : bool (optional)
         Whether or not team made the NCCA tourney. Defaults to False. If True,
-        returns 1 if team made the tourney, 0 if not, after parsedName
+        returns 1 if team made the tourney, 0 if not, after parsed_name
     return_both : bool (optional)
-        Whether or not to return both the parsedName and whether or not that
+        Whether or not to return both the parsed_name and whether or not that
         team made the tourney. Defaults to False.
     ignore_errors : bool (optional)
         Whether or not to ignore name errors and replace unknown teams with NaN.
@@ -588,7 +588,7 @@ def name_normalizer(name : str, made_tourney : bool=False,
     if "st." in parsed_team:
         tmp = parsed_team.split()
         if tmp[0] == "st.":
-            parsedTeam = parsedTeam.replace("st.", "saint")
+            parsed_team = parsed_team.replace("st.", "saint")
         elif tmp[-1] == "st.":
             parsed_team = parsed_team.replace("st.", "state")
         # Weird cases where st in middle can be state or saint

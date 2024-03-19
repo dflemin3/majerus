@@ -8,7 +8,7 @@ data from men's college basketball reference: https://www.sports-reference.com/c
 """
 
 # Imports
-import requests as requests
+import requests
 import pandas as pd
 import numpy as np
 import unicodedata
@@ -25,7 +25,8 @@ __all__ = ["scrape_team_game_logs_basic", "scrape_team_game_logs_adv",
 
 
 def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
-                                normalize_names : bool=True) -> pd.DataFrame:
+                                normalize_names : bool=True, headers : dict=None,
+                                proxies : dict=None) -> pd.DataFrame:
     """
     Scrape all basic gamelogs for the (season-1 - season) season, e.g.
     2014-2015 season, from https://www.sports-reference.com/cbb/ for team. URL
@@ -43,11 +44,16 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
         Whether or not to output diagnostics. Defaults to False.
     normalizeNames : bool (optional)
         Whether or not to normalize names. Defaults to True.
+    headers : dict (optional)
+        dictionary of headers for request
+    proxies : dict (optional)
+        dictionary of proxies for request
 
     Returns
     -------
     df : pd.DataFrame
-        dataframe containing all basic gamelogs for team in the specified season
+        dataframe containing all basic gamelogs for team in the specified season.
+        Returns None if request fails 
     """
 
     # Validate season - only a small allowable range that I've validated
@@ -65,9 +71,19 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
     # Initialize gamelog
     url = f"http://www.sports-reference.com/cbb/schools/{parsed_team}/{season}-gamelogs.html"
 
-    # Scrape the data using pandas
-    df = pd.read_html(url, parse_dates=True, attrs = {'id': 'sgl-basic_NCAAM'},
-                    header=1, index_col=1)[0]
+    # Scrape using requests
+    try: 
+        r = requests.get(url, proxies=proxies, headers=headers)
+        if r.status_code < 400:
+            # Parse response data using pandas after successful request
+            df = pd.read_html(r.content, parse_dates=True, attrs={'id': 'sgl-basic_NCAAM'},
+                                header=1, index_col=1)[0]
+        else: 
+            print(f"Failed request with status code {r.status_code}") 
+            return None
+    except Exception as e: 
+        print(f"Failed request with exception {e}")
+        return None 
 
     # Remove NaN and junk indices that correspond to delimiter rows
     df = df[df.index.notnull()].copy()
@@ -126,7 +142,8 @@ def scrape_team_game_logs_basic(team : str, season : int, verbose : bool=False,
 
 
 def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False, 
-                              normalize_names : bool=True) -> pd.DataFrame:
+                              normalize_names : bool=True, headers : dict=None,
+                              proxies : dict=None) -> pd.DataFrame:
     """
     Scrape all advanced gamelogs for the (season-1 - season) season, e.g.
     2014-2015 season, from https://www.sports-reference.com/cbb/ for team. URL
@@ -144,6 +161,10 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
         Whether or not to output diagnostics. Defaults to False.
     normalizeNames : bool (optional)
         Whether or not to normalize names. Defaults to True.
+    headers : dict (optional)
+        dictionary of headers for request
+    proxies : dict (optional)
+        dictionary of proxies for request
 
     Returns
     -------
@@ -152,7 +173,7 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
     """
 
     # Validate season - only a small allowable range that I've validated
-    if season > 2022:
+    if season > 2024:
         raise IOError("ERROR: Can't scrape data from the future!")
     if season < 2011:
         raise IOError("ERROR: Haven't validated scraping for seasons < 2010-2011!")
@@ -220,7 +241,8 @@ def scrape_team_game_logs_adv(team : str, season : int, verbose : bool=False,
 
 
 def scrape_team_game_logs(team : str, season : int, verbose : bool=False,
-                          normalize_names : bool=True) -> pd.DataFrame:
+                          normalize_names : bool=True, headers : dict=None,
+                          proxies : dict=None) -> pd.DataFrame:
     """
     Scrape all gamelogs for the (season-1 - season) season, e.g.
     2014-2015 season, from https://www.sports-reference.com/cbb/ for team. This
@@ -238,6 +260,10 @@ def scrape_team_game_logs(team : str, season : int, verbose : bool=False,
         Whether or not to output diagnostics. Defaults to False.
     normalize_names : bool (optional)
         Whether or not to normalize names. Defaults to True.
+    headers : dict (optional)
+        dictionary of headers for request
+    proxies : dict (optional)
+        dictionary of proxies for request
 
     Returns
     -------
@@ -259,3 +285,5 @@ def scrape_team_game_logs(team : str, season : int, verbose : bool=False,
     df.drop(drop_cols, axis=1, inplace=True)
 
     return df
+
+
