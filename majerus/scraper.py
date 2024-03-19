@@ -283,10 +283,12 @@ def scrape_team_game_logs(team : str, season : int, verbose : bool=False,
 
     # Scrape basic gamelogs
     df_basic = scrape_team_game_logs_basic(team, season, verbose=verbose,
-                                           normalize_names=normalize_names)
+                                           normalize_names=normalize_names,
+                                           headers=headers, proxies=proxies)
     # Scrape advanced gamelogs
     df_adv = scrape_team_game_logs_adv(team, season, verbose=verbose,
-                                       normalize_names=normalize_names)
+                                       normalize_names=normalize_names,
+                                       headers=headers, proxies=proxies)
 
     # Join, discard duplicated columns
     df = df_basic.join(df_adv, how="left", rsuffix="_dup")
